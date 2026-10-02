@@ -41,68 +41,68 @@ else
 fi
 
 icons="${XDG_DATA_HOME:-$HOME/.local/share}/agent-notify/icons"
-label=$(agent_label "$agent")
-icon="$icons/$agent.png"
+label=$(jq -r --arg agent "$agent" '.agents[$agent].label // empty' "$notify_config")
+[ -n "$label" ] || label=$(agent_label "$agent")
+icon=$(jq -r --arg agent "$agent" '.agents[$agent].icon // .defaultIcon // empty' "$notify_config")
+[ -n "$icon" ] || icon="$icons/$agent.png"
+if [ ! -f "$icon" ]; then
+  icon=$(jq -r '.defaultIcon // empty' "$notify_config")
+fi
 [ -f "$icon" ] || icon="$icons/agent.png"
 
 # Any non-zero is unclassified, and this path suppresses rather than spams.
 classified=$(agent_classify "$reason" "$notif_type" "$msg") || exit 0
 reason=$classified
 
-if [ "$reason" = "done" ] && [ -n "$pane" ]; then
+profile=${AGENT_NOTIFY_PROFILE:-default}
+policy=$(jq -ce --arg reason "$reason" --arg profile "$profile" '
+  .defaults * (.events[$reason] // {}) * (.profiles[$profile].defaults // {}) * (.profiles[$profile].events[$reason] // {})
+' "$notify_config") || exit 2
+[ "$(printf '%s' "$policy" | jq -r '.enabled')" = true ] || exit 0
+what=$(printf '%s' "$policy" | jq -r '.message')
+sound=$(printf '%s' "$policy" | jq -r '.sound // empty')
+notif_timeout=$(printf '%s' "$policy" | jq -r '.timeoutSeconds')
+cooldown=$(printf '%s' "$policy" | jq -r '.cooldownSeconds')
+minimum=$(printf '%s' "$policy" | jq -r '.minDurationSeconds')
+content_image=$(printf '%s' "$policy" | jq -r '.contentImage')
+
+case "$reason" in
+  approval) notif_timeout=${AGENT_NOTIFY_TIMEOUT_APPROVAL:-$notif_timeout} ;;
+  idle) notif_timeout=${AGENT_NOTIFY_TIMEOUT_IDLE:-$notif_timeout} ;;
+  done) notif_timeout=${AGENT_NOTIFY_TIMEOUT_DONE:-$notif_timeout} ;;
+  *) notif_timeout=${AGENT_NOTIFY_TIMEOUT_DEFAULT:-$notif_timeout} ;;
+esac
+[[ $notif_timeout =~ ^[0-9]+$ ]] || {
+  printf 'agent-notify: timeout must be an integer\n' >&2
+  exit 2
+}
+
+if [ "$minimum" -gt 0 ] && [[ $pane =~ ^[0-9]+$ ]]; then
   an_panes=$(sysinit_path agentPanes) || an_panes="$an_agents/panes"
   start_file="$an_panes/$pane.start"
   if [ -f "$start_file" ]; then
     start=$(cat "$start_file" 2> /dev/null) || start=0
-    now=$(date +%s 2> /dev/null) || now=0
+    [[ $start =~ ^[0-9]+$ ]] || start=0
+    now=$(date +%s)
     elapsed=$((now - start))
-    [ "$elapsed" -lt 60 ] && exit 0
+    [ "$elapsed" -lt "$minimum" ] && exit 0
   fi
 fi
 
-if [ "$reason" = "idle" ]; then
+if [ "$cooldown" -gt 0 ]; then
   notif_dir=$(sysinit_path agentNotif) || notif_dir="$an_agents/notif"
   mkdir -p "$notif_dir" 2> /dev/null || true
-  if [ -n "$pane" ]; then
-    dedup_key="${pane}_idle"
-  else
-    ctx_hash=$(printf '%s' "$agent|$context" | cksum 2> /dev/null | cut -d' ' -f1) || ctx_hash=""
-    [ -n "$ctx_hash" ] || ctx_hash=0
-    dedup_key="ctx${ctx_hash}_idle"
-  fi
+  dedup_key=$(printf '%s' "$agent|$context|$pane|$reason" | cksum | cut -d' ' -f1)
   dedup_file="$notif_dir/$dedup_key"
+  now=$(date +%s)
   if [ -f "$dedup_file" ]; then
     last=$(cat "$dedup_file" 2> /dev/null) || last=0
-    now=$(date +%s 2> /dev/null) || now=0
+    [[ $last =~ ^[0-9]+$ ]] || last=0
     elapsed=$((now - last))
-    [ "$elapsed" -lt 300 ] && exit 0
+    [ "$elapsed" -lt "$cooldown" ] && exit 0
   fi
-  printf '%s' "$(date +%s 2> /dev/null || printf '0')" > "$dedup_file" 2> /dev/null || true
+  printf '%s' "$now" > "$dedup_file" 2> /dev/null || true
 fi
-
-notif_timeout=${AGENT_NOTIFY_TIMEOUT_DEFAULT:-5}
-case "$reason" in
-  approval)
-    what="needs your approval"
-    sound="Blow" # distinctive whoosh — action required, but not jarring
-    notif_timeout=${AGENT_NOTIFY_TIMEOUT_APPROVAL:-5}
-    ;;
-  idle)
-    what="is waiting for you"
-    sound="Pop" # brief, minimal — gentle nudge
-    notif_timeout=${AGENT_NOTIFY_TIMEOUT_IDLE:-5}
-    ;;
-  done)
-    what="finished its turn"
-    sound="Ping" # clean single tone — satisfying completion signal
-    notif_timeout=${AGENT_NOTIFY_TIMEOUT_DONE:-5}
-    ;;
-  *)
-    what="needs your attention"
-    sound="Pop"
-    notif_timeout=${AGENT_NOTIFY_TIMEOUT_DEFAULT:-5}
-    ;;
-esac
 
 title="$label · $what"
 suffix=""
@@ -119,12 +119,15 @@ args=(
   --title "$title"
   --subtitle "$context"
   --message "$body"
-  --sound "$sound"
   --group "$group"
   --timeout "$notif_timeout"
 )
 
-[ ! -f "$icon" ] || args+=(--app-icon "$icon")
+[ -z "$sound" ] || args+=(--sound "$sound")
+if [ -f "$icon" ]; then
+  args+=(--app-icon "$icon")
+  [ "$content_image" != true ] || args+=(--content-image "$icon")
+fi
 
 (
   outcome=$("$notifier" "${args[@]}" 2> /dev/null) || outcome=""

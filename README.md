@@ -32,6 +32,33 @@ It classifies hook messages, groups notifications, and limits repeated idle noti
 Optional icons live under `$XDG_DATA_HOME/agent-notify/icons` (default `~/.local/share`).
 `lib.mkNotifier { inherit pkgs; labels = "..."; }` accepts an optional `agent_label` shell function.
 Personal icons, harness registration, and hook installation belong to the caller.
+
+`lib.mkNotifier { inherit pkgs; settings = { ... }; }` merges caller settings with
+[the defaults](nix/notification-defaults.nix). The build validates the result against
+[`agent-notify/v1`](schemas/notification-config.schema.json). The returned package
+exposes `configFile` and `schema` for inspection or installation.
+
+Policy layers merge in order: defaults, event, profile defaults, profile event.
+`AGENT_NOTIFY_PROFILE=prompt` selects a 300-second approval notification with a
+content image. Other events retain their normal settings. Profiles do not change
+classification, pane identity, grouping, or click-to-focus behavior.
+
+```nix
+settings = {
+  events.done.minDurationSeconds = 30;
+  events.idle.cooldownSeconds = 600;
+  events.approval.sound = null;
+  agents.pi = { label = "Pi"; icon = "${myIcons}/pi.png"; };
+  defaultIcon = "${myIcons}/agent.png";
+};
+```
+
+An event can set `enabled = false`. A null sound is silent. Missing icons fall back
+to `defaultIcon`, then the XDG generic icon; absent files are omitted from delivery.
+Legacy `AGENT_NOTIFY_TIMEOUT_*` overrides remain supported. Hook stdin remains a
+harness payload with optional `cwd`, `message`, and `notification_type`; it is
+separate from the configuration schema and the pane-state schema.
+
 The `runtime` directory also exposes shell fragments for pane identity and focus adapters.
 
 ```sh

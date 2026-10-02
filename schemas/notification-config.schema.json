@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent notification configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "defaults",
+    "events",
+    "profiles",
+    "agents",
+    "defaultIcon"
+  ],
+  "properties": {
+    "version": {
+      "const": "agent-notify/v1"
+    },
+    "defaults": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/policy"
+        },
+        {
+          "required": [
+            "enabled",
+            "message",
+            "sound",
+            "timeoutSeconds",
+            "cooldownSeconds",
+            "minDurationSeconds",
+            "contentImage"
+          ]
+        }
+      ]
+    },
+    "events": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/policy"
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "defaults": {
+            "$ref": "#/$defs/policy"
+          },
+          "events": {
+            "type": "object",
+            "propertyNames": {
+              "pattern": "^[a-z][a-z0-9_-]*$"
+            },
+            "additionalProperties": {
+              "$ref": "#/$defs/policy"
+            }
+          }
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "defaultIcon": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "$defs": {
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sound": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "cooldownSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400
+        },
+        "minDurationSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400
+        },
+        "contentImage": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

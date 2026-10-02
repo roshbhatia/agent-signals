@@ -3,7 +3,7 @@ ai_workspace() {
   [ -n "$ai_pane" ] || return 0
   ai_wz=$(command -v wezterm 2> /dev/null || true)
   [ -n "$ai_wz" ] || return 0
-  "$ai_wz" cli list --format json 2> /dev/null |
+  "$ai_wz" cli --no-auto-start list --format json 2> /dev/null |
     jq -r --arg p "$ai_pane" '.[] | select((.pane_id | tostring) == $p) | .workspace' 2> /dev/null |
     head -1
 }

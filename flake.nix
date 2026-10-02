@@ -33,6 +33,8 @@
       );
       checks = each (system: {
         package = self.packages.${system}.default;
+        notifications = import ./nix/check-notifications.nix { pkgs = nixpkgs.legacyPackages.${system}; };
+        notifier = self.packages.${system}.notifier;
       });
       devShells = each (
         system:
