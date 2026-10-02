@@ -1,0 +1,33 @@
+nix/notifications.nix
+  s_e66529e22f60b7::t_3be3cba5bc1686 3
+flake.nix
+  s_e66529e22f60b7::t_506b9f146fdff5 36-37
+README.md
+  s_e66529e22f60b7::t_1af448d3717bfe 35-61
+nix/check-notifications.nix
+  s_e66529e22f60b7::t_9ac4e87c2493a7 1-20
+runtime/agent-identity.sh
+  s_e66529e22f60b7::t_ee5e20a4c1d109 6
+runtime/agent-notify.sh
+  s_e66529e22f60b7::t_b64b442dfa6fdf 44-50,57-80,85-86,88,92,95,97,100,102,104,126-130
+schemas/notification-config.schema.json
+  s_e66529e22f60b7::t_ccee7ab9e80062 1-131
+tests/notifications.py
+  s_e66529e22f60b7::t_9c08c40756a4f0 1-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8419e143d86adea9b513eda42aa01d86b658d399",
+  "prompts": {},
+  "sessions": {
+    "s_e66529e22f60b7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0fe61-af23-7a03-8aa8-9faf706aa4eb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
