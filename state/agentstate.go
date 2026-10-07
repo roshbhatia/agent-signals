@@ -131,17 +131,19 @@ func Run(args []string) int {
 
 	pane := os.Getenv("WEZTERM_PANE")
 	input := readStdin()
-	if pane == "" {
-		return 0
-	}
 
 	stateDir := paths.AgentPanes()
 	stateFile := filepath.Join(stateDir, pane+".json")
 
-	if status == "exit" {
-		emitUserVar("")
-		_ = os.Remove(stateFile)
-		_ = os.Remove(filepath.Join(stateDir, pane+".start"))
+	if status == "exit" || status == "clear" {
+		if status == "clear" {
+			emitProgramStatus(programStatus(state{Status: "clear"}))
+		}
+		if pane != "" {
+			emitUserVar("")
+			_ = os.Remove(stateFile)
+			_ = os.Remove(filepath.Join(stateDir, pane+".start"))
+		}
 		return 0
 	}
 
@@ -162,6 +164,12 @@ func Run(args []string) int {
 		Status:  status,
 		Reason:  reason,
 		Since:   since,
+	}
+	if sequence := programStatus(record); sequence != "" {
+		emitProgramStatus(sequence)
+	}
+	if pane == "" {
+		return 0
 	}
 
 	if encoded := base64.StdEncoding.EncodeToString([]byte(userVar(record))); encoded != "" {
@@ -271,7 +279,7 @@ func dig(doc map[string]any, paths ...string) string {
 func deriveReason(src, status string, input map[string]any, keys toolKeys, stateDir, pane string, since int64) string {
 	switch src {
 	case "submit":
-		if os.MkdirAll(stateDir, 0o755) == nil {
+		if pane != "" && os.MkdirAll(stateDir, 0o755) == nil {
 			_ = os.WriteFile(filepath.Join(stateDir, pane+".start"),
 				[]byte(strconv.FormatInt(since, 10)), 0o644)
 		}

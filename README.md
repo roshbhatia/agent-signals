@@ -12,10 +12,24 @@ agent-state claude exit </dev/null
 nix run github:roshbhatia/agent-signals -- claude working
 ```
 
-`WEZTERM_PANE` identifies the pane. Without it, the writer exits successfully without writing state.
+The writer emits [OSC 7501 program status](https://www.superlogical.com/rex/docs/build/program-status)
+to its controlling terminal. `waiting` maps to `blocked`; `idle`, `working`,
+`done`, and `error` retain their meanings. Unknown statuses emit no OSC 7501 report.
+Unsupported terminals ignore the sequence. This does not advertise terminal support.
+
+`WEZTERM_PANE` enables the existing OSC 1337 and JSON transports alongside OSC 7501.
+Without it, the writer emits OSC 7501 without creating pane files.
 State records use atomic replacement and the existing XDG agent paths. The optional sysinit paths manifest remains supported.
 See [the schema](state/SCHEMA.md) for fields and OSC 1337 user variables.
 Go consumers can import `github.com/roshbhatia/agent-signals/state` (package `agentstate`).
+
+`exit` clears only the legacy transports. OSC 7501 terminals own record lifetime:
+`done` and `error` survive process exit; `working` and `blocked` expire on exit or
+the next shell prompt. `agent-state claude clear` explicitly clears all root and
+child program-status records and the legacy transports. Producers should emit
+`idle` when the user cancels work. Reports use the root record, a validated `app`,
+and bounded, base64-encoded text without control characters. Structured child
+records, progress, and blocking kinds are not emitted yet.
 
 This package owns status transport and notification adapters. Producers own status decisions.
 Orc owns session orchestration, assignments, and checkpoints. This package neither schedules work nor changes Orc sessions.
