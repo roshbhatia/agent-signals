@@ -164,6 +164,10 @@ func TestPublishLeavesNoTempFileBehind(t *testing.T) {
 }
 
 func TestExitRemovesBothPaneFiles(t *testing.T) {
+	cleared := false
+	original := emitUserVar
+	emitUserVar = func(encoded string) { cleared = encoded == "" }
+	t.Cleanup(func() { emitUserVar = original })
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
 	t.Setenv("WEZTERM_PANE", "9")
@@ -178,6 +182,9 @@ func TestExitRemovesBothPaneFiles(t *testing.T) {
 	}
 	if code := Run([]string{"claude", "exit"}); code != 0 {
 		t.Fatalf("exit returned %d", code)
+	}
+	if !cleared {
+		t.Fatal("exit left the terminal user variable behind")
 	}
 	for _, name := range []string{"9.json", "9.start"} {
 		if _, err := os.Stat(filepath.Join(panes, name)); err == nil {

@@ -139,6 +139,7 @@ func Run(args []string) int {
 	stateFile := filepath.Join(stateDir, pane+".json")
 
 	if status == "exit" {
+		emitUserVar("")
 		_ = os.Remove(stateFile)
 		_ = os.Remove(filepath.Join(stateDir, pane+".start"))
 		return 0
