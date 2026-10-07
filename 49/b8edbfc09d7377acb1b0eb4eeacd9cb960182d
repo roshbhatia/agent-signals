@@ -1,0 +1,22 @@
+state/agentstate_test.go
+  s_de281cf8e5cd4f::t_3fa62fbf49cfd2 167-170,186-187
+  s_de281cf8e5cd4f::t_22c470a98f2409 188
+state/agentstate.go
+  s_de281cf8e5cd4f::t_3fa62fbf49cfd2 142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "49b8edbfc09d7377acb1b0eb4eeacd9cb960182d",
+  "prompts": {},
+  "sessions": {
+    "s_de281cf8e5cd4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-12eb-7480-afb6-c32a40ba7deb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
