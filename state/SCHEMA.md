@@ -1,6 +1,6 @@
 # The pane record
 
-One record per tmux pane, describing what an agent is doing in it.
+One record per wezterm pane, describing what an agent is doing in it.
 `agentstate.go` is the only writer. Every reader is listed below and cites this
 file.
 
@@ -18,9 +18,9 @@ everywhere.
 | Encoding | base64 of `status\|reason\|since\|agent` | one JSON object |
 | Lifetime | dies with the pane | outlives the pane |
 | Liveness rule | none needed | pane existence, see below |
-| Fails when | terminal passthrough is unavailable | the pane id is not the writer's |
+| Fails when | anything between the writer and wezterm eats OSC | the pane id is not the writer's |
 
-### OSC passthrough
+### OSC does not cross a VT that snapshots
 
 Measured against `zmx` 0.7.0, which holds terminal state in `libghostty-vt` and
 hands the client a grid snapshot: a pane wrapped in `zmx attach` delivers neither
@@ -28,8 +28,9 @@ OSC 1337 `SetUserVar` nor OSC 7. A control pane in the same GUI delivered both.
 So inside such a wrapper the user variable is not merely stale, it never arrives,
 and wezterm reads the wrapper's own cwd rather than the shell's.
 
-Tmux can pass supported OSC sequences to the terminal with passthrough enabled.
-The JSON file remains the shared source for status surfaces and pane identity.
+This is why the file is a co-authority and not a fallback. `ui.lua` reads both
+and takes whichever carries the greater `since`, so a channel that cannot deliver
+loses rather than winning with nothing.
 
 Both are rendered from one `state` value in `Run`. `userVar` takes that value
 rather than the variables it was built from, so the four shared fields cannot
@@ -43,8 +44,8 @@ that lookup forks git and the variable is the half the owner sees.
 | Field | Type | Notes |
 |---|---|---|
 | `version` | number | this schema's version, currently 1 |
-| `mux` | number | the tmux server pid, 0 when unknown. See Liveness |
-| `pane` | string | tmux pane ID, for example `%3` |
+| `mux` | number | the wezterm mux's pid, 0 when unknown. See Liveness |
+| `pane` | number OR string | see below |
 | `session` | string | seshy session name, empty outside one |
 | `repo` | string | repository basename |
 | `branch` | string | current branch |
@@ -55,8 +56,12 @@ that lookup forks git and the variable is the half the owner sees.
 | `reason` | string | at most 60 characters, see below |
 | `since` | number | unix seconds |
 
-Tmux pane IDs are strings such as `%3`; readers compare them without numeric
-coercion.
+### `pane` is a number when numeric and a string otherwise
+
+`paneValue` parses the id and emits a JSON number when it parses, a string when
+it does not. A reader must accept both. `jq`'s `.pane` yields either without
+complaint. lua's `json_parse` yields a number or a string, so a reader
+comparing it to a pane id must convert first.
 
 ### `reason` never contains `|`
 
@@ -92,22 +97,27 @@ Every reader already answers pane existence, and each read site says so:
 
 - `ui.lua` walks the panes it is drawing, so a record it never asks for is a
   record it never shows.
-- `agent-sessions.sh` reads `tmux list-panes` once per run and prunes against
+- `agent-sessions.sh` forks `wezterm cli list` once per run and prunes against
   it.
 - `agent-busy-panes.sh` takes the live pane list from its caller and skips any
   record not in it.
 
 ### `mux` is the generation marker
 
-Tmux pane IDs are unique within a server and can be reused after the server
-restarts. The pane ID alone cannot distinguish a stale record from a current
-one.
+Pane ids restart at 0 in each mux. Confirmed by reading `WEZTERM_PANE` in a
+running instance and in two freshly started ones: all three reported pane 0. So
+a pane id alone cannot tell yesterday's record from today's. Pane existence
+answers "is there a pane 0", never "is it the same pane 0".
 
-`mux` stores the tmux server pid, read with `tmux display-message`; it is 0
-outside tmux and in records written before this field existed.
+`mux` is the pid of the wezterm mux the pane belongs to, parsed from the
+`gui-sock-<pid>` socket path wezterm sets in every pane. It is 0 outside wezterm
+and in records written before this field existed.
 
-Records with mux 0 remain unverifiable and are reaped rather than read as
-current.
+A GUI attached to a `wezterm-mux-server` also produced 0, because the server's
+socket is named `sock` and carries no pid. That configuration is gone, and it is
+the reason the reap treats 0 as unverifiable and deletes the record rather than
+reading it as "no marker". Sixteen records survived that way, the oldest by four
+weeks, until the reap was corrected.
 
 The marker is enforced by deletion rather than at read time. `agent-state`
 removes the records of any mux that is no longer running, and any record it
@@ -116,14 +126,26 @@ for dead muxes and `.start` files no record claims, skipping the calling pane's
 own: `working submit` writes `.start` before it publishes the record the pass
 looks for. A `.mux-<pid>` marker file gates the whole pass, so the check costs
 one stat on the hot path.
-The state directory outlives the mux, so this pass is required to remove stale
-records after a server restart.
+This is the routine trigger, not an edge case. The state directory outlives the
+mux and nothing else clears it. The first pane of a restarted terminal takes
+the id the last one had.
 
-Doing it by deletion rather than in each reader keeps consumers independent of
-the mux process environment.
+Doing it by deletion rather than in each reader is what lets `ui.lua` benefit.
+The wezterm GUI process carries neither `WEZTERM_UNIX_SOCKET` nor
+`WEZTERM_PANE`, confirmed with `ps -Eww` on a running GUI. So `ui.lua` cannot
+work out which mux it is, and cannot evaluate the marker itself.
 
-Tmux server pids separate simultaneous servers, and pane IDs identify
-individual panes within each server.
+Three holes remain, all real:
+
+- A reader outside wezterm cannot answer pane existence. There is no such reader
+  today. A Go reader would have to fork `wezterm cli list`, which is the fork
+  removed in 2.9.
+- Two muxes running at once both hand out low pane ids, so a record from the
+  other live mux is neither stale nor ours. Both muxes are alive, so neither the
+  reap nor pane existence rejects it.
+- The reap runs on the first agent tool call in a new mux. A pane opened in that
+  mux before any agent runs can be drawn once against the previous occupant's
+  record.
 
 ## Readers
 

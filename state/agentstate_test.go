@@ -45,8 +45,11 @@ func TestTruncateCapsTheReasonAtTheRenderedWidth(t *testing.T) {
 	}
 }
 
-func TestPaneValueKeepsTmuxPaneIDsAsStrings(t *testing.T) {
-	for _, pane := range []string{"%12", "abc", ""} {
+func TestPaneValueKeepsANumericIDANumber(t *testing.T) {
+	if got := paneValue("12"); got != int64(12) {
+		t.Errorf("paneValue(\"12\") = %v (%T), want int64 12", got, got)
+	}
+	for _, pane := range []string{"abc", "12a", ""} {
 		if got := paneValue(pane); got != pane {
 			t.Errorf("paneValue(%q) = %v, want the string back", pane, got)
 		}
@@ -119,8 +122,8 @@ func TestSubmitWritesTheStartStamp(t *testing.T) {
 
 func TestPublishWritesCompleteJSONOrNothing(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "%3.json")
-	publish(path, state{Pane: "%3", Agent: "claude", Status: "working", Since: 42})
+	path := filepath.Join(dir, "3.json")
+	publish(path, state{Pane: int64(3), Agent: "claude", Status: "working", Since: 42})
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -138,8 +141,8 @@ func TestPublishWritesCompleteJSONOrNothing(t *testing.T) {
 			t.Errorf("the file bus record is missing %q", key)
 		}
 	}
-	if back["pane"] != "%3" {
-		t.Errorf("pane serialized as %v, want the tmux pane ID %q", back["pane"], "%3")
+	if back["pane"] != float64(3) {
+		t.Errorf("pane serialized as %v, want the number 3", back["pane"])
 	}
 	if back["dirty"] != false {
 		t.Errorf("dirty serialized as %v, want a bool", back["dirty"])
@@ -148,13 +151,13 @@ func TestPublishWritesCompleteJSONOrNothing(t *testing.T) {
 
 func TestPublishLeavesNoTempFileBehind(t *testing.T) {
 	dir := t.TempDir()
-	publish(filepath.Join(dir, "%3.json"), state{Pane: "%3"})
+	publish(filepath.Join(dir, "3.json"), state{Pane: int64(3)})
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
-		if entry.Name() != "%3.json" {
+		if entry.Name() != "3.json" {
 			t.Errorf("publish left %s behind", entry.Name())
 		}
 	}
@@ -167,12 +170,12 @@ func TestExitRemovesBothPaneFiles(t *testing.T) {
 	t.Cleanup(func() { emitUserVar = original })
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
-	t.Setenv("TMUX_PANE", "%9")
+	t.Setenv("WEZTERM_PANE", "9")
 	panes := filepath.Join(dir, "agents", "panes")
 	if err := os.MkdirAll(panes, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"%9.json", "%9.start"} {
+	for _, name := range []string{"9.json", "9.start"} {
 		if err := os.WriteFile(filepath.Join(panes, name), []byte("x"), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -190,10 +193,10 @@ func TestExitRemovesBothPaneFiles(t *testing.T) {
 	}
 }
 
-func TestNoTmuxPaneIsASilentNoOp(t *testing.T) {
+func TestNoWezternPaneIsASilentNoOp(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
-	t.Setenv("TMUX_PANE", "")
+	t.Setenv("WEZTERM_PANE", "")
 	if code := Run([]string{"claude", "working"}); code != 0 {
 		t.Fatalf("Run returned %d with no pane", code)
 	}
@@ -219,7 +222,7 @@ func TestBothEncodingsAgree(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
 	t.Setenv("SYSINIT_PATHS_MANIFEST", filepath.Join(dir, "absent.json"))
-	t.Setenv("TMUX_PANE", "%7")
+	t.Setenv("WEZTERM_PANE", "7")
 
 	var captured string
 	original := emitUserVar
@@ -242,7 +245,7 @@ func TestBothEncodingsAgree(t *testing.T) {
 		t.Fatalf("user variable has %d fields, want 4: %q", len(parts), raw)
 	}
 
-	body, err := os.ReadFile(filepath.Join(dir, "agents", "panes", "%7.json"))
+	body, err := os.ReadFile(filepath.Join(dir, "agents", "panes", "7.json"))
 	if err != nil {
 		t.Fatalf("read record: %v", err)
 	}
@@ -278,18 +281,21 @@ func TestBothEncodingsAgree(t *testing.T) {
 	}
 }
 
-func TestMuxIDUsesTmuxServerPID(t *testing.T) {
-	t.Setenv("TMUX_PANE", "%7")
-	original := tmuxServerPID
-	tmuxServerPID = func(pane string) int {
-		if pane != "%7" {
-			t.Fatalf("tmuxServerPID pane = %q", pane)
-		}
-		return 1679
+func TestMuxIDReadsTheGenerationMarkerOrNothing(t *testing.T) {
+	cases := map[string]int{
+		"/Users/x/.local/share/wezterm/gui-sock-1679": 1679,
+		"gui-sock-1":         1,
+		"":                   0,
+		"/tmp/gui-sock-":     0,
+		"/tmp/gui-sock-abc":  0,
+		"/tmp/gui-sock--3":   0,
+		"/tmp/mux-sock-1679": 0,
 	}
-	t.Cleanup(func() { tmuxServerPID = original })
-	if got := MuxID(); got != 1679 {
-		t.Fatalf("MuxID() = %d, want tmux server pid 1679", got)
+	for socket, want := range cases {
+		t.Setenv("WEZTERM_UNIX_SOCKET", socket)
+		if got := MuxID(); got != want {
+			t.Errorf("MuxID() with socket %q = %d, want %d", socket, got, want)
+		}
 	}
 }
 

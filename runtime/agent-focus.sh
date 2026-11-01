@@ -1,7 +1,7 @@
 pane=${1:-}
 session=${2:-}
 
-tmux=$(command -v tmux 2> /dev/null || true)
+wz=$(command -v wezterm 2> /dev/null || true)
 notifier=$(command -v alerter 2> /dev/null || true)
 
 if [ -n "$notifier" ] && [ -n "$pane" ]; then
@@ -12,21 +12,23 @@ raise_app() {
   /usr/bin/osascript -e 'tell application "WezTerm" to activate' 2> /dev/null || true
 }
 
-[ -n "$tmux" ] || {
+[ -n "$wz" ] || {
   raise_app
   exit 0
 }
 
-if [ -n "$pane" ] && [ -n "$tmux" ]; then
-  target=$($tmux display-message -p -t "$pane" '#{session_name}:#{window_index}' 2> /dev/null || true)
-  if [ -n "$target" ] && $tmux switch-client -t "$target" 2> /dev/null && $tmux select-pane -t "$pane" 2> /dev/null; then
-    raise_app
-    exit 0
-  fi
+if [ -n "$pane" ] && "$wz" cli --no-auto-start activate-pane --pane-id "$pane" 2> /dev/null; then
+  raise_app
+  exit 0
 fi
 
-if [ -n "$session" ] && [ -n "$tmux" ]; then
-  if $tmux has-session -t "$session" 2> /dev/null && $tmux switch-client -t "$session" 2> /dev/null; then
+if [ -n "$session" ]; then
+  alt=$("$wz" cli --no-auto-start list --format json 2> /dev/null |
+    jq -r --arg w "$session" \
+      '[.[] | select(.workspace == $w)] | (map(select(.is_active)) + .) | .[0].pane_id // empty' \
+      2> /dev/null |
+    head -1)
+  if [ -n "$alt" ] && "$wz" cli --no-auto-start activate-pane --pane-id "$alt" 2> /dev/null; then
     raise_app
     exit 0
   fi

@@ -1,8 +1,7 @@
 agent=${1:-agent}
 reason=${2:-attention}
 focus_exe=${3:-}
-# The terminal app can call this from its own process: no hook JSON or pane env,
-# so callers pass the pane and cwd explicitly.
+# wezterm calls this from its own process: no hook JSON, no WEZTERM_PANE, cwd is /.
 arg_pane=${4:-}
 arg_cwd=${5:-}
 
@@ -26,7 +25,7 @@ cwd=$(json '.cwd')
 msg=$(json '.message')
 notif_type=$(json '.notification_type')
 
-pane=${TMUX_PANE:-$arg_pane}
+pane=${WEZTERM_PANE:-$arg_pane}
 agent_identity "$cwd" "$pane"
 session=$AI_SESSION
 repo=$AI_REPO
@@ -78,7 +77,7 @@ esac
   exit 2
 }
 
-if [ "$minimum" -gt 0 ] && [[ $pane =~ ^%?[0-9]+$ ]]; then
+if [ "$minimum" -gt 0 ] && [[ $pane =~ ^[0-9]+$ ]]; then
   an_panes=$(sysinit_path agentPanes) || an_panes="$an_agents/panes"
   start_file="$an_panes/$pane.start"
   if [ -f "$start_file" ]; then

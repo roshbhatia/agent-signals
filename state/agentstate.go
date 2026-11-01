@@ -17,23 +17,11 @@ import (
 	"github.com/roshbhatia/go-utils/paths"
 )
 
-const Summary = "record this pane's agent status for terminal surfaces"
+const Summary = "record this pane's agent status for the wezterm surfaces"
 
 const reasonLimit = 60
 
 const SchemaVersion = 1
-
-var tmuxServerPID = func(pane string) int {
-	output, err := exec.Command("tmux", "display-message", "-p", "-t", pane, "#{pid}").Output()
-	if err != nil {
-		return 0
-	}
-	pid, err := strconv.Atoi(strings.TrimSpace(string(output)))
-	if err != nil || pid <= 0 {
-		return 0
-	}
-	return pid
-}
 
 type state struct {
 	Version  int    `json:"version"`
@@ -141,7 +129,7 @@ func Run(args []string) int {
 	reasonSrc := arg(positional, 2, "")
 	keys = keys.orElse(keysFor(agent))
 
-	pane := os.Getenv("TMUX_PANE")
+	pane := os.Getenv("WEZTERM_PANE")
 	input := readStdin()
 
 	stateDir := paths.AgentPanes()
@@ -341,25 +329,29 @@ func truncate(s string, limit int) string {
 var emitUserVar = writeUserVar
 
 func writeUserVar(encoded string) {
-	pane := os.Getenv("TMUX_PANE")
-	if pane == "" {
-		return
-	}
-	sequence := fmt.Sprintf("\033]1337;SetUserVar=agent_state=%s\007", encoded)
 	tty, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
 	if err != nil {
 		return
 	}
 	defer func() { _ = tty.Close() }()
-	_, _ = fmt.Fprintf(tty, "\033Ptmux;\033\033%s\033\\", strings.TrimPrefix(sequence, "\033"))
+	_, _ = fmt.Fprintf(tty, "\033]1337;SetUserVar=agent_state=%s\007", encoded)
 }
 
 func MuxID() int {
-	pane := os.Getenv("TMUX_PANE")
-	if pane == "" {
+	socket := os.Getenv("WEZTERM_UNIX_SOCKET")
+	if socket == "" {
 		return 0
 	}
-	return tmuxServerPID(pane)
+	name := filepath.Base(socket)
+	const prefix = "gui-sock-"
+	if !strings.HasPrefix(name, prefix) {
+		return 0
+	}
+	pid, err := strconv.Atoi(strings.TrimPrefix(name, prefix))
+	if err != nil || pid <= 0 {
+		return 0
+	}
+	return pid
 }
 
 func muxAlive(pid int) bool {
@@ -438,6 +430,9 @@ func reapDeadMuxes(stateDir string, mux int, self string) {
 }
 
 func paneValue(pane string) any {
+	if n, err := strconv.ParseInt(pane, 10, 64); err == nil && pane != "" {
+		return n
+	}
 	return pane
 }
 
