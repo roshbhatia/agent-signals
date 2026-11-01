@@ -1,0 +1,35 @@
+README.md
+  s_00f0f53292bea7::t_09fbc607ce91df 20-21
+runtime/agent-focus.sh
+  s_00f0f53292bea7::t_b950fb13b82c5a 4,15,20-22,25-31
+runtime/agent-identity.sh
+  s_00f0f53292bea7::t_57a725e2f2b564 4-8
+runtime/agent-notify.sh
+  s_00f0f53292bea7::t_222f338e0ad964 4,28,80
+state/SCHEMA.md
+  s_00f0f53292bea7::t_15176aba8dd2a7 3,21,23,31-33,47-48,59-64,100,107-110,112-114,116-120,129-148
+state/agentstate.go
+  s_00f0f53292bea7::t_d7c08e77dad86d 20,132,337,341-347,350-354,433-435
+state/agentstate_test.go
+  s_00f0f53292bea7::t_855ef6e1e7a6cc 48-52,125-126,144-145,154,160,173,178,196,199,225,248,284-297
+state/program_status_test.go
+  s_00f0f53292bea7::t_e3d05cb08f5805 55,82
+tests/notifications.py
+  s_00f0f53292bea7::t_0b595799e5bd11 84,116,128-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d46f4548bcc3d085f8d4ce9fd9011c013fcdb2fe",
+  "prompts": {},
+  "sessions": {
+    "s_00f0f53292bea7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1933c-a6e8-7442-97c4-87ca5f511b94",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
