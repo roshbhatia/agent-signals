@@ -81,7 +81,7 @@ print('@CONTENTCLICKED')
         "NOTIFY_TEST_OUTPUT": str(output),
         "NOTIFY_TEST_FOCUS": str(root / "focus"),
     }
-    env.pop("WEZTERM_PANE", None)
+    env.pop("TMUX_PANE", None)
     env.pop("AGENT_NOTIFY_PROFILE", None)
     config = copy.deepcopy(defaults)
     icon = root / "fixture.png"
@@ -113,7 +113,7 @@ print('@CONTENTCLICKED')
     assert args[args.index("--timeout") + 1] == "5"
     assert args[args.index("--app-icon") + 1] == str(icon)
     args = run(
-        "approval", extra={"AGENT_NOTIFY_PROFILE": "prompt", "WEZTERM_PANE": "71"}
+        "approval", extra={"AGENT_NOTIFY_PROFILE": "prompt", "TMUX_PANE": "%71"}
     )
     assert args[args.index("--timeout") + 1] == "300"
     assert "--content-image" in args
@@ -125,10 +125,10 @@ print('@CONTENTCLICKED')
     run("idle", expected=False)
     panes = root / "state/agents/panes"
     panes.mkdir(parents=True)
-    (panes / "71.start").write_text(str(int(time.time())))
-    run("done", extra={"WEZTERM_PANE": "71"}, expected=False)
-    (panes / "71.start").write_text(str(int(time.time()) - 120))
-    run("done", extra={"WEZTERM_PANE": "71"})
+    (panes / "%71.start").write_text(str(int(time.time())))
+    run("done", extra={"TMUX_PANE": "%71"}, expected=False)
+    (panes / "%71.start").write_text(str(int(time.time()) - 120))
+    run("done", extra={"TMUX_PANE": "%71"})
     config["events"]["approval"]["sound"] = None
     config_path.write_text(json.dumps(config))
     assert "--sound" not in run("approval")

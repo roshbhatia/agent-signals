@@ -17,8 +17,9 @@ to its controlling terminal. `waiting` maps to `blocked`; `idle`, `working`,
 `done`, and `error` retain their meanings. Unknown statuses emit no OSC 7501 report.
 Unsupported terminals ignore the sequence. This does not advertise terminal support.
 
-`WEZTERM_PANE` enables the existing OSC 1337 and JSON transports alongside OSC 7501.
-Without it, the writer emits OSC 7501 without creating pane files.
+`TMUX_PANE` enables the OSC 1337 and JSON transports alongside OSC 7501.
+Tmux pane IDs such as `%3` are stored as strings. Without `TMUX_PANE`, the
+writer emits OSC 7501 without creating pane files.
 State records use atomic replacement and the existing XDG agent paths. The optional sysinit paths manifest remains supported.
 See [the schema](state/SCHEMA.md) for fields and OSC 1337 user variables.
 Go consumers can import `github.com/roshbhatia/agent-signals/state` (package `agentstate`).

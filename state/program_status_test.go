@@ -52,7 +52,7 @@ func TestProgramStatusRejectsInjectedAppAndSanitizesText(t *testing.T) {
 func TestProgramStatusWithoutWezTermDoesNotWritePaneFiles(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
-	t.Setenv("WEZTERM_PANE", "")
+	t.Setenv("TMUX_PANE", "")
 	var reports []string
 	original := emitProgramStatus
 	emitProgramStatus = func(value string) { reports = append(reports, value) }
@@ -79,7 +79,7 @@ func TestProgramStatusWithoutWezTermDoesNotWritePaneFiles(t *testing.T) {
 
 func TestProgramStatusAndLegacyUserVarAreBothEmitted(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
-	t.Setenv("WEZTERM_PANE", "42")
+	t.Setenv("TMUX_PANE", "%42")
 	var report, legacy string
 	oldProgram, oldLegacy := emitProgramStatus, emitUserVar
 	emitProgramStatus = func(value string) { report = value }
