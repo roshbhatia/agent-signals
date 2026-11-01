@@ -1,0 +1,42 @@
+README.md
+  s_00f0f53292bea7::t_71d5a48c86926d 20-22
+state/agentstate.go
+  s_00f0f53292bea7::t_afbcae3c1d140d 20,144,344-347,358-359
+  s_00f0f53292bea7::t_376a8c51e09af4 348,354
+  s_00f0f53292bea7::t_b74ec140b9c7c4 26-37,362
+state/SCHEMA.md
+  s_00f0f53292bea7::t_5c3901f787d328 3,21,23,31-32,46-47,58-59,95
+  s_00f0f53292bea7::t_8813c7cc4ad3c9 102-104,106-107,109-110,119-123
+  s_00f0f53292bea7::t_f3283669067f64 125-126
+  s_00f0f53292bea7::t_1a0305615bd13a 124
+runtime/agent-notify.sh
+  s_00f0f53292bea7::t_47cc17bfcf9f88 81
+  s_00f0f53292bea7::t_71d5a48c86926d 4-5,29
+state/agentstate_test.go
+  s_00f0f53292bea7::t_436e58b4382d1c 48-49,141-142,170,175,193,196,222,245,281-286,288-292
+  s_00f0f53292bea7::t_af4887e93e6bd0 122-123,151,157
+tests/notifications.py
+  s_00f0f53292bea7::t_71d5a48c86926d 84,116,128-131
+runtime/agent-focus.sh
+  s_00f0f53292bea7::t_62f3a4751a19c1 4,15,20-25,28-29
+runtime/agent-identity.sh
+  s_00f0f53292bea7::t_f30ff3416c4d05 4-6
+state/program_status_test.go
+  s_00f0f53292bea7::t_f8ecc5e3d22896 55,82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "76c25073a70c13b34ada4f918aef834b7ebe925a",
+  "prompts": {},
+  "sessions": {
+    "s_00f0f53292bea7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1933c-a6e8-7442-97c4-87ca5f511b94",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
