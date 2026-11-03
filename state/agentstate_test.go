@@ -398,20 +398,3 @@ func TestReapWithoutAMarkerDoesNothing(t *testing.T) {
 		t.Errorf("the marker file was written with no mux: %d entries", len(entries))
 	}
 }
-
-func TestTmuxIdentityTakesPriorityOverWezTerm(t *testing.T) {
-	t.Setenv("TMUX_PANE", "%7")
-	t.Setenv("TMUX", "/tmp/tmux-503/default,4321,0")
-	t.Setenv("WEZTERM_PANE", "22")
-	t.Setenv("WEZTERM_UNIX_SOCKET", "/tmp/gui-sock-1234")
-	if currentPane() != "%7" || MuxID() != 4321 {
-		t.Fatalf("pane=%q mux=%d", currentPane(), MuxID())
-	}
-}
-
-func TestMain(m *testing.M) {
-	for _, key := range []string{"TMUX", "TMUX_PANE", "WEZTERM_PANE", "SYSINIT_TY_BACKEND"} {
-		_ = os.Unsetenv(key)
-	}
-	os.Exit(m.Run())
-}

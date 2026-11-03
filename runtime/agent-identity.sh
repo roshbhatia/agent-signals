@@ -1,12 +1,6 @@
 ai_workspace() {
   ai_pane=$1
   [ -n "$ai_pane" ] || return 0
-  case "$ai_pane" in
-    %*)
-      tmux display-message -p -t "$ai_pane" '#{session_name}' 2> /dev/null
-      return
-      ;;
-  esac
   ai_wz=$(command -v wezterm 2> /dev/null || true)
   [ -n "$ai_wz" ] || return 0
   "$ai_wz" cli --no-auto-start list --format json 2> /dev/null |
@@ -27,6 +21,10 @@ agent_identity() {
       AI_SESSION=${ai_rest%%/*}
       ;;
   esac
+
+  if [ -z "$AI_SESSION" ] && [ -n "${ZMX_SESSION:-}" ]; then
+    AI_SESSION=${ZMX_SESSION#"${ZMX_SESSION_PREFIX:-}"}
+  fi
 
   AI_WORKSPACE=""
   if [ -z "$AI_SESSION" ]; then

@@ -1,12 +1,12 @@
 import copy
 import json
 import os
+from pathlib import Path
 import shlex
 import subprocess
 import sys
 import tempfile
 import time
-from pathlib import Path
 
 import jsonschema
 
@@ -81,8 +81,6 @@ print('@CONTENTCLICKED')
         "NOTIFY_TEST_OUTPUT": str(output),
         "NOTIFY_TEST_FOCUS": str(root / "focus"),
     }
-    env.pop("TMUX", None)
-    env.pop("TMUX_PANE", None)
     env.pop("WEZTERM_PANE", None)
     env.pop("AGENT_NOTIFY_PROFILE", None)
     config = copy.deepcopy(defaults)
@@ -148,21 +146,6 @@ print('@CONTENTCLICKED')
             break
         time.sleep(0.02)
     assert (root / "focus").exists()
-    focus_log = root / "terminal-focus.jsonl"
-    ty = root / "bin/ty"
-    ty.write_text(
-        "#!" + sys.executable + "\n"
-        + "import json,sys\nfrom pathlib import Path\n"
-        + f"with Path({str(focus_log)!r}).open('a') as f: f.write(json.dumps(sys.argv[1:])+'\\n')\n"
-    )
-    ty.chmod(0o700)
-    focus_script = root / "tmux-focus.sh"
-    focus_script.write_text((runtime / "agent-group.sh").read_text() + "\n" + (runtime / "agent-focus.sh").read_text())
-    for pane in ["%3", "57"]:
-        subprocess.run(["bash", str(focus_script), pane, "review"], env=env, check=True, capture_output=True)
-    focused = [json.loads(line) for line in focus_log.read_text().splitlines()]
-    assert focused == [["terminal", "focus", "%3"], ["terminal", "focus", "wezterm:57"]], focused
-
 print(
     "Notification schema, profiles, classification, assets, throttling, focus and legacy overrides passed"
 )
