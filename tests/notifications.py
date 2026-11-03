@@ -148,41 +148,20 @@ print('@CONTENTCLICKED')
             break
         time.sleep(0.02)
     assert (root / "focus").exists()
-    tmux_log = root / "tmux-focus.jsonl"
-    tmux = root / "bin/tmux"
-    tmux.write_text(
-        "#!"
-        + sys.executable
-        + "\n"
+    focus_log = root / "terminal-focus.jsonl"
+    ty = root / "bin/ty"
+    ty.write_text(
+        "#!" + sys.executable + "\n"
         + "import json,sys\nfrom pathlib import Path\n"
-        + "args=sys.argv[1:]\n"
-        + "if args[0]=='display-message': print('review:0')\n"
-        + "elif args[0]=='list-clients': print('local\\twezterm\\t10\\nremote\\txterm-256color\\t20')\n"
-        + f"else:\n with Path({str(tmux_log)!r}).open('a') as f: f.write(json.dumps(args)+'\\n')\n"
+        + f"with Path({str(focus_log)!r}).open('a') as f: f.write(json.dumps(sys.argv[1:])+'\\n')\n"
     )
-    tmux.chmod(0o700)
-    osascript = root / "bin/osascript"
-    osascript.write_text("#!/bin/sh\nexit 0\n")
-    osascript.chmod(0o700)
+    ty.chmod(0o700)
     focus_script = root / "tmux-focus.sh"
-    focus_script.write_text(
-        (runtime / "agent-group.sh").read_text()
-        + "\n"
-        + (runtime / "agent-focus.sh")
-        .read_text()
-        .replace("/usr/bin/osascript", str(osascript))
-    )
-    subprocess.run(
-        ["bash", str(focus_script), "%3", "review"],
-        env=env,
-        check=True,
-        capture_output=True,
-    )
-    focused = [json.loads(line) for line in tmux_log.read_text().splitlines()]
-    assert focused == [
-        ["switch-client", "-c", "local", "-t", "review:0"],
-        ["select-pane", "-t", "%3"],
-    ], focused
+    focus_script.write_text((runtime / "agent-group.sh").read_text() + "\n" + (runtime / "agent-focus.sh").read_text())
+    for pane in ["%3", "57"]:
+        subprocess.run(["bash", str(focus_script), pane, "review"], env=env, check=True, capture_output=True)
+    focused = [json.loads(line) for line in focus_log.read_text().splitlines()]
+    assert focused == [["terminal", "focus", "%3"], ["terminal", "focus", "wezterm:57"]], focused
 
 print(
     "Notification schema, profiles, classification, assets, throttling, focus and legacy overrides passed"
