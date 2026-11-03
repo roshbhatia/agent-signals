@@ -31,6 +31,7 @@ let
       pkgs.jq
       pkgs.git
       pkgs.coreutils
+      pkgs.tmux
       pkgs.wezterm
     ]
     ++ pkgs.lib.optional (notifier != null) notifier;

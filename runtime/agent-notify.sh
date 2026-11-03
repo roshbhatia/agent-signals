@@ -25,7 +25,7 @@ cwd=$(json '.cwd')
 msg=$(json '.message')
 notif_type=$(json '.notification_type')
 
-pane=${WEZTERM_PANE:-$arg_pane}
+pane=${TMUX_PANE:-${WEZTERM_PANE:-$arg_pane}}
 agent_identity "$cwd" "$pane"
 session=$AI_SESSION
 repo=$AI_REPO

@@ -12,6 +12,20 @@ raise_app() {
   /usr/bin/osascript -e 'tell application "WezTerm" to activate' 2> /dev/null || true
 }
 
+case "$pane" in
+  %*)
+    target=$(tmux display-message -p -t "$pane" '#{session_name}:#{window_index}' 2> /dev/null || true)
+    client=$(tmux list-clients -F '#{client_name}	#{client_termname}	#{client_activity}' 2> /dev/null |
+      jq -Rrs 'split("\n") | map(split("\t") | select(length == 3 and (.[1] | startswith("wezterm")))) | sort_by(.[2] | tonumber) | last | .[0] // empty')
+    if [ -n "$target" ] && [ -n "$client" ]; then
+      tmux switch-client -c "$client" -t "$target" 2> /dev/null || true
+      tmux select-pane -t "$pane" 2> /dev/null || true
+    fi
+    raise_app
+    exit 0
+    ;;
+esac
+
 [ -n "$wz" ] || {
   raise_app
   exit 0

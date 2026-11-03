@@ -1,6 +1,6 @@
 # The pane record
 
-One record per wezterm pane, describing what an agent is doing in it.
+One record per terminal pane, describing what an agent is doing in it.
 `agentstate.go` is the only writer. Every reader is listed below and cites this
 file.
 
@@ -20,18 +20,13 @@ everywhere.
 | Liveness rule | none needed | pane existence, see below |
 | Fails when | anything between the writer and wezterm eats OSC | the pane id is not the writer's |
 
-### OSC does not cross a VT that snapshots
+### Tmux and pane identity
 
-Measured against `zmx` 0.7.0, which holds terminal state in `libghostty-vt` and
-hands the client a grid snapshot: a pane wrapped in `zmx attach` delivers neither
-OSC 1337 `SetUserVar` nor OSC 7. A control pane in the same GUI delivered both.
-So inside such a wrapper the user variable is not merely stale, it never arrives,
-and wezterm reads the wrapper's own cwd rather than the shell's.
-
-This is why the file is a co-authority and not a fallback. `ui.lua` reads both
-and takes whichever carries the greater `since`, so a channel that cannot deliver
-loses rather than winning with nothing.
-
+Tmux records use `%N` pane identifiers and the server PID from `TMUX`.
+Native WezTerm records retain their numeric pane identifiers and mux PID.
+Inside tmux, OSC user variables are wrapped in tmux passthrough sequences.
+The JSON records provide per-pane state independently of the renderer's OSC
+support.
 Both are rendered from one `state` value in `Run`. `userVar` takes that value
 rather than the variables it was built from, so the four shared fields cannot
 disagree. A test asserts it.
@@ -44,9 +39,9 @@ that lookup forks git and the variable is the half the owner sees.
 | Field | Type | Notes |
 |---|---|---|
 | `version` | number | this schema's version, currently 1 |
-| `mux` | number | the wezterm mux's pid, 0 when unknown. See Liveness |
+| `mux` | number | the tmux server or WezTerm mux pid, 0 when unknown. See Liveness |
 | `pane` | number OR string | see below |
-| `session` | string | seshy session name, empty outside one |
+| `session` | string | seshy or tmux session name, empty when unknown |
 | `repo` | string | repository basename |
 | `branch` | string | current branch |
 | `dirty` | bool | working tree has changes |

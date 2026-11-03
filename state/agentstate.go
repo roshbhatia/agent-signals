@@ -129,7 +129,7 @@ func Run(args []string) int {
 	reasonSrc := arg(positional, 2, "")
 	keys = keys.orElse(keysFor(agent))
 
-	pane := os.Getenv("WEZTERM_PANE")
+	pane := currentPane()
 	input := readStdin()
 
 	stateDir := paths.AgentPanes()
@@ -334,10 +334,29 @@ func writeUserVar(encoded string) {
 		return
 	}
 	defer func() { _ = tty.Close() }()
-	_, _ = fmt.Fprintf(tty, "\033]1337;SetUserVar=agent_state=%s\007", encoded)
+	sequence := fmt.Sprintf("\033]1337;SetUserVar=agent_state=%s\007", encoded)
+	if os.Getenv("TMUX_PANE") != "" {
+		sequence = "\033Ptmux;" + strings.ReplaceAll(sequence, "\033", "\033\033") + "\033\\"
+	}
+	_, _ = fmt.Fprint(tty, sequence)
+}
+
+func currentPane() string {
+	if pane := os.Getenv("TMUX_PANE"); pane != "" {
+		return pane
+	}
+	return os.Getenv("WEZTERM_PANE")
 }
 
 func MuxID() int {
+	if os.Getenv("TMUX_PANE") != "" {
+		parts := strings.Split(os.Getenv("TMUX"), ",")
+		if len(parts) >= 2 {
+			pid, _ := strconv.Atoi(parts[1])
+			return pid
+		}
+		return 0
+	}
 	socket := os.Getenv("WEZTERM_UNIX_SOCKET")
 	if socket == "" {
 		return 0
@@ -474,7 +493,7 @@ func identify(dir string) identity {
 	}
 
 	if id.session == "" {
-		id.session = zmxSession()
+		id.session = tmuxSession()
 	}
 
 	toplevel := gitOut(dir, "rev-parse", "--show-toplevel")
@@ -510,12 +529,16 @@ func childRepos(dir string) []string {
 	return out
 }
 
-func zmxSession() string {
-	name := os.Getenv("ZMX_SESSION")
-	if name == "" {
+func tmuxSession() string {
+	pane := os.Getenv("TMUX_PANE")
+	if pane == "" {
 		return ""
 	}
-	return strings.TrimPrefix(name, os.Getenv("ZMX_SESSION_PREFIX"))
+	output, err := exec.Command("tmux", "display-message", "-p", "-t", pane, "#{session_name}").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(output))
 }
 
 func gitOut(dir string, args ...string) string {
