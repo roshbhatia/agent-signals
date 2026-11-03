@@ -1,0 +1,21 @@
+runtime/agent-focus.sh
+  s_b6baf4162ed3c9::t_db924f1e7d6861 8-12,15
+tests/notifications.py
+  s_b6baf4162ed3c9::t_5272f7ba132f3a 151-154,156,158,160-164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a00d679a16e67ab3c7e8dd4036e2f3f0dbdc07af",
+  "prompts": {},
+  "sessions": {
+    "s_b6baf4162ed3c9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19cf6-a9c0-7161-abce-266a87939179",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
