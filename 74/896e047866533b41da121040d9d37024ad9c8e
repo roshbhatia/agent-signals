@@ -1,0 +1,29 @@
+runtime/agent-focus.sh
+  s_b6baf4162ed3c9::t_865ee2d3bb3770 4,6,10-22,24,26-34,36-38
+runtime/agent-identity.sh
+  s_b6baf4162ed3c9::t_9cc9afab2b17b4 25-28
+runtime/agent-notify.sh
+  s_b6baf4162ed3c9::t_0c6db509bb173f 28
+state/SCHEMA.md
+  s_b6baf4162ed3c9::t_a8dc58062f1f41 3,23-33,47,49
+state/agentstate.go
+  s_b6baf4162ed3c9::t_4d35f09ad08111 132,337,477,513-515,518
+tests/notifications.py
+  s_b6baf4162ed3c9::t_b4b1e343fb738b 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "74896e047866533b41da121040d9d37024ad9c8e",
+  "prompts": {},
+  "sessions": {
+    "s_b6baf4162ed3c9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19cf6-a9c0-7161-abce-266a87939179",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
