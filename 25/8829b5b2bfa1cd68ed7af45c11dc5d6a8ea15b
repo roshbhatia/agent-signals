@@ -1,0 +1,21 @@
+runtime/agent-notify.sh
+  s_de8d39c3c56992::t_75ce9d72457e56 133-134
+tests/notifications.py
+  s_de8d39c3c56992::t_34213972f84c2d 45,116-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "258829b5b2bfa1cd68ed7af45c11dc5d6a8ea15b",
+  "prompts": {},
+  "sessions": {
+    "s_de8d39c3c56992": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ad25-3528-7c81-a954-276c13dcabf6",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Roshan Bhatia <rshnbhatia@gmail.com>"
+    }
+  }
+}
