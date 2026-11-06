@@ -22,7 +22,7 @@ json() {
 cwd=$(json '.cwd')
 [ -n "$cwd" ] || cwd=$arg_cwd
 [ -n "$cwd" ] || cwd=$PWD
-msg=$(json '.message')
+msg=$(json '[.message, .last_assistant_message, .["last-assistant-message"]] | map(select(type == "string" and length > 0)) | first')
 notif_type=$(json '.notification_type')
 
 pane=${WEZTERM_PANE:-$arg_pane}

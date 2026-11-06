@@ -112,6 +112,12 @@ print('@CONTENTCLICKED')
     assert args[args.index("--message") + 1] == "Review this"
     assert args[args.index("--timeout") + 1] == "5"
     assert args[args.index("--app-icon") + 1] == str(icon)
+    args = run("done", {"last_assistant_message": "The configuration checks passed."})
+    assert args[args.index("--message") + 1] == "The configuration checks passed."
+    args = run("done", {"last-assistant-message": "The build is complete."})
+    assert args[args.index("--message") + 1] == "The build is complete."
+    args = run("done", {"message": {}, "last_assistant_message": "The tests passed."})
+    assert args[args.index("--message") + 1] == "The tests passed."
     args = run(
         "approval", extra={"AGENT_NOTIFY_PROFILE": "prompt", "WEZTERM_PANE": "71"}
     )
