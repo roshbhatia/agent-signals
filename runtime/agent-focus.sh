@@ -9,7 +9,7 @@ if [ -n "$notifier" ] && [ -n "$pane" ]; then
 fi
 
 raise_app() {
-  /usr/bin/osascript -e 'tell application "WezTerm" to activate' 2> /dev/null || true
+  /usr/bin/open -a WezTerm 2> /dev/null || true
 }
 
 [ -n "$wz" ] || {
