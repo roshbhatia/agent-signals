@@ -130,7 +130,8 @@ if [ -f "$icon" ]; then
 fi
 
 (
-  outcome=$("$notifier" "${args[@]}" 2> /dev/null) || outcome=""
+  outcome=$(AGENT_NOTIFY_FOCUS_EXE="$focus_exe" AGENT_NOTIFY_PANE="$pane" AGENT_NOTIFY_SESSION="$session" \
+    "$notifier" "${args[@]}" 2> /dev/null) || outcome=""
   if [ -n "$focus_exe" ]; then
     case "$outcome" in
       @CONTENTCLICKED | @ACTIONCLICKED)

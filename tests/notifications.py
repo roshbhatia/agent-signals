@@ -42,6 +42,7 @@ with tempfile.TemporaryDirectory() as directory:
         + """import json,os,sys
 from pathlib import Path
 p=Path(os.environ['NOTIFY_TEST_OUTPUT'])
+p.with_name('focus-context.json').write_text(json.dumps({key:os.environ.get(key) for key in ['AGENT_NOTIFY_FOCUS_EXE','AGENT_NOTIFY_PANE','AGENT_NOTIFY_SESSION']}))
 tmp=p.with_suffix('.tmp')
 tmp.write_text(json.dumps(sys.argv[1:]))
 tmp.replace(p)
@@ -112,6 +113,9 @@ print('@CONTENTCLICKED')
     assert args[args.index("--message") + 1] == "Review this"
     assert args[args.index("--timeout") + 1] == "5"
     assert args[args.index("--app-icon") + 1] == str(icon)
+    context = json.loads((root / "focus-context.json").read_text())
+    assert context["AGENT_NOTIFY_FOCUS_EXE"] == str(focus)
+    assert context["AGENT_NOTIFY_PANE"] == ""
     args = run("done", {"last_assistant_message": "The configuration checks passed."})
     assert args[args.index("--message") + 1] == "The configuration checks passed."
     args = run("done", {"last-assistant-message": "The build is complete."})
